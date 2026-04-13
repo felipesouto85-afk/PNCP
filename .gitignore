@@ -1,0 +1,17 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Data files
+*.tmp
+*.pbix
+
+# Optional: Data spreadsheets (uncomment if you don't want to track data)
+# *.xlsx
+# *.xls
+# *.json
+
+# System files
+.DS_Store
+Thumbs.db
