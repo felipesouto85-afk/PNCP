@@ -29,21 +29,30 @@ def download_pncp_final():
 
     base_url = "https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao"
     
-    # --- NOVO: Verificação de atualização incremental ---
+    # --- AJUSTE: Base de dados inicial Jan/2026 ---
     df_base = pd.DataFrame()
-    data_inicial = "20260401"  # Data base inicial (caso não exista arquivo)
+    data_inicial = "20260101"  # Data base solicitada para preenchimento do histórico
     
     if os.path.exists(output_file):
         try:
-            print(f"Lendo base existente para verificar última atualização...")
+            print(f"Lendo base existente para verificar necessidade de carga histórica...")
             df_base = pd.read_excel(output_file)
             if not df_base.empty and 'dataPublicacaoPncp' in df_base.columns:
-                # Converter para datetime para achar a maior data
+                # Converter para datetime para analisar o período coberto
                 df_base['dataPublicacaoPncp'] = pd.to_datetime(df_base['dataPublicacaoPncp'], errors='coerce')
+                
+                min_data = df_base['dataPublicacaoPncp'].min()
                 ultima_data = df_base['dataPublicacaoPncp'].max()
-                if pd.notna(ultima_data):
-                    data_inicial = ultima_data.strftime("%Y%m%d")
-                    print(f"Base carregada. Última data encontrada: {ultima_data}. Atualizando a partir de: {data_inicial}")
+
+                # Se a base já contém dados que iniciam em Janeiro/2026, fazemos apenas o incremental.
+                # Caso contrário, forçamos a busca desde 01/01/2026 para preencher a lacuna.
+                if pd.notna(min_data) and min_data.year == 2026 and min_data.month == 1:
+                    if pd.notna(ultima_data):
+                        data_inicial = ultima_data.strftime("%Y%m%d")
+                        print(f"Histórico OK (inicia em {min_data.strftime('%d/%m/%Y')}). Atualizando incrementalmente desde: {data_inicial}")
+                else:
+                    data_inicial = "20260101"
+                    print(f"Lacuna histórica detectada ou base nova. Iniciando 'Criação da Base de Dados inicial' desde {data_inicial}")
                     
             # Converter colunas de IDs para string para evitar conflitos de tipo no merge/drop_duplicates
             cols_to_str = ['numeroControlePNCP', 'unidadeOrgao_codigoIbge']
